@@ -9,69 +9,151 @@
   </head>
   <body>
     <div class="app-shell">
-      <aside class="sidebar">
-        <div class="brand">
-          <div class="brand-mark">FC</div>
-          <div>
-            <h1>Free Codex</h1>
-            <p>Server Control</p>
-          </div>
+      <header class="app-header">
+        <div class="brand-lockup">
+          <div class="brand-mark" aria-hidden="true">FC</div>
+          <strong>Free Codex</strong>
+          <span class="header-divider" aria-hidden="true"></span>
+          <span id="headerSection">Providers</span>
+          <span id="providerCount" class="count-label">0 available</span>
         </div>
+        <div class="header-actions">
+          <button id="refreshModelsButton" class="header-button" type="button">
+            <span aria-hidden="true">↻</span>
+            Refresh models
+          </button>
+          <div class="gateway-state"><span></span>Gateway online</div>
+        </div>
+      </header>
+
+      <aside class="provider-pane">
+        <div class="provider-tools">
+          <div class="filter-tabs" aria-label="Filter providers">
+            <button class="filter-button active" type="button" data-filter="all">All</button>
+            <button class="filter-button" type="button" data-filter="configured">
+              Configured
+            </button>
+            <button class="filter-button" type="button" data-filter="remote">Cloud</button>
+            <button class="filter-button" type="button" data-filter="local">Local</button>
+          </div>
+          <label class="provider-search">
+            <span aria-hidden="true">⌕</span>
+            <input id="providerSearch" type="search" placeholder="Search providers" />
+            <kbd>/</kbd>
+          </label>
+        </div>
+
+        <div id="providerList" class="provider-list" aria-label="Providers"></div>
+
         <nav id="sectionNav" class="section-nav" aria-label="Admin views"></nav>
       </aside>
 
-      <main class="main">
-        <header class="topbar">
-          <div>
-            <h2 id="pageTitle">Providers</h2>
-          </div>
-        </header>
-
-        <div id="adminViews" class="admin-views">
-          <section id="view-providers" class="admin-view active" data-view="providers">
-            <section class="provider-strip" aria-label="Provider status">
-              <div class="strip-header">
-                <h3>Providers</h3>
+      <main class="workspace">
+        <section id="providerWorkspace" class="workspace-view active" data-view="providers">
+          <header class="provider-header">
+            <div class="provider-heading">
+              <div id="selectedProviderIcon" class="provider-icon">FC</div>
+              <div>
+                <h1 id="selectedProviderName">Provider</h1>
+                <p id="selectedProviderDescription">Configure a provider for Codex CLI.</p>
+                <div class="provider-summary">
+                  <span id="selectedProviderStatus" class="status-text neutral">Not configured</span>
+                  <span class="summary-divider"></span>
+                  <span id="selectedProviderModels">Models not loaded</span>
+                </div>
               </div>
-              <div id="providerGrid" class="provider-grid"></div>
+            </div>
+            <button id="testProviderButton" class="outline-button" type="button">
+              <span aria-hidden="true">▷</span>
+              Test connection
+            </button>
+          </header>
+
+          <div class="setup-flow">
+            <section class="setup-step" aria-labelledby="credentialHeading">
+              <div class="step-number">1</div>
+              <div class="step-content">
+                <div class="step-heading">
+                  <div>
+                    <h2 id="credentialHeading">API credential</h2>
+                    <p id="credentialDescription">Add the key supplied by this provider.</p>
+                  </div>
+                  <a id="credentialLink" class="text-link" href="#" target="_blank" rel="noreferrer">
+                    Get a key ↗
+                  </a>
+                </div>
+                <div id="credentialField"></div>
+              </div>
             </section>
-            <div
-              id="providersSections"
-              class="form-sections"
-              aria-label="Provider configuration"
-            ></div>
-          </section>
 
-          <section id="view-model_config" class="admin-view" data-view="model_config" hidden>
-            <div
-              id="modelConfigSections"
-              class="form-sections"
-              aria-label="Model configuration"
-            ></div>
-          </section>
+            <section class="setup-step" aria-labelledby="modelHeading">
+              <div class="step-number">2</div>
+              <div class="step-content">
+                <div class="step-heading">
+                  <div>
+                    <h2 id="modelHeading">Default model</h2>
+                    <p>Test the connection to load models, then choose the default for Codex.</p>
+                  </div>
+                </div>
+                <div id="modelField"></div>
+              </div>
+            </section>
 
-          <section id="view-messaging" class="admin-view" data-view="messaging" hidden>
-            <div
-              id="messagingSections"
-              class="form-sections"
-              aria-label="Messaging configuration"
-            ></div>
-          </section>
-        </div>
+            <section class="setup-step" aria-labelledby="connectionHeading">
+              <div class="step-number">3</div>
+              <div class="step-content">
+                <div class="step-heading">
+                  <div>
+                    <h2 id="connectionHeading">Connection</h2>
+                    <p>The provider endpoint used by the local Responses gateway.</p>
+                  </div>
+                </div>
+                <div class="endpoint-row">
+                  <span id="providerEndpoint">Endpoint unavailable</span>
+                </div>
+                <div id="connectionResult" class="connection-result neutral">
+                  Run a connection test to verify access and discover models.
+                </div>
+              </div>
+            </section>
+
+            <details id="providerAdvanced" class="advanced-panel">
+              <summary>
+                <span>Advanced provider settings</span>
+                <span aria-hidden="true">⌄</span>
+              </summary>
+              <div id="providerAdvancedFields" class="advanced-fields"></div>
+            </details>
+          </div>
+        </section>
+
+        <section id="settingsWorkspace" class="workspace-view" data-view="settings" hidden>
+          <header class="settings-header">
+            <p id="settingsEyebrow">Configuration</p>
+            <h1 id="settingsTitle">Settings</h1>
+            <p id="settingsDescription"></p>
+          </header>
+          <div id="settingsSections" class="settings-sections"></div>
+        </section>
+
+        <footer class="action-bar">
+          <div class="action-state">
+            <strong id="dirtyState">No unsaved changes</strong>
+            <span id="configPath"></span>
+          </div>
+          <div id="messageArea" class="message-area" role="status" aria-live="polite"></div>
+          <div class="action-buttons">
+            <button id="validateButton" class="secondary-button" type="button">Validate</button>
+            <button id="applyButton" class="primary-button" type="button" disabled>
+              <span aria-hidden="true">↻</span>
+              Apply changes
+            </button>
+          </div>
+        </footer>
       </main>
-
-      <footer class="action-bar">
-        <div class="action-meta">
-          <strong id="dirtyState">No changes</strong>
-          <span id="configPath"></span>
-        </div>
-        <div id="messageArea" class="message-area"></div>
-        <div class="action-buttons">
-          <button id="validateButton" class="secondary-button" type="button">Validate</button>
-          <button id="applyButton" class="primary-button" type="button" disabled>Apply</button>
-        </div>
-      </footer>
     </div>
+
+    <datalist id="model-options"></datalist>
     <script src="/admin/assets/admin.js"></script>
   </body>
 </html>

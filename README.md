@@ -27,12 +27,12 @@ Free Codex keeps the Codex terminal experience - tool use, streaming, resumable 
 
 ### 1. Clone and install
 
-    git clone https://github.com/YOUR_USERNAME/free-codex.git
+    git clone https://github.com/ishaanxgupta/free-codex.git
     cd free-codex
 
 macOS or Linux:
 
-    ./scripts/install.sh
+    sh scripts/install.sh
 
 Windows PowerShell:
 
@@ -52,9 +52,14 @@ This creates ~/.free-codex/.env.
 
 The Admin UI opens at http://127.0.0.1:8082/admin by default.
 
-### 4. Select a provider and model
+### 4. Add a provider key and select a model
 
-For a no-cost cloud starting point:
+Open the Admin UI, select a provider, add its API key or local server URL, and
+choose **Test connection**. After the provider returns its available models,
+select a default model and choose **Apply changes**. Provider keys are stored
+locally in `~/.free-codex/.env` and are never shown again by the Admin UI.
+
+For a no-cost cloud starting point, enter these values in the Admin UI:
 
     OPENROUTER_API_KEY="..."
     MODEL="open_router/openrouter/free"
@@ -64,14 +69,15 @@ For Ollama:
     OLLAMA_BASE_URL="http://localhost:11434"
     MODEL="ollama/qwen3-coder"
 
-Apply the settings in the Admin UI, then launch Codex:
+Apply the settings in the Admin UI, restart the gateway if prompted, then launch
+Codex in a second terminal:
 
     free-codex
 
 All normal Codex arguments are forwarded:
 
     free-codex exec "explain this repository"
-    free-codex --full-auto
+    free-codex --sandbox workspace-write --ask-for-approval never
 
 Inside Codex, use /model to select a model exposed by the gateway.
 
@@ -79,30 +85,30 @@ Inside Codex, use /model to select a model exposed by the gateway.
 
 | Provider | Credential or setting | Example model |
 | --- | --- | --- |
-| OpenRouter | OPENROUTER_API_KEY | open_router/openrouter/free |
-| NVIDIA NIM | NVIDIA_NIM_API_KEY | nvidia_nim/nvidia/nemotron-3-super-120b-a12b |
-| Gemini | GEMINI_API_KEY | gemini/models/gemini-3.1-flash-lite |
-| DeepSeek | DEEPSEEK_API_KEY | deepseek/deepseek-chat |
-| Mistral | MISTRAL_API_KEY | mistral/devstral-small-latest |
-| Mistral Codestral | CODESTRAL_API_KEY | mistral_codestral/codestral-latest |
-| OpenCode Zen | OPENCODE_API_KEY | opencode/gpt-5.3-codex |
-| OpenCode Go | OPENCODE_API_KEY | opencode_go/minimax-m2.7 |
-| Vercel AI Gateway | AI_GATEWAY_API_KEY | vercel/openai/gpt-5.5 |
-| Hugging Face | HUGGINGFACE_API_KEY | huggingface/openai/gpt-oss-120b:fastest |
-| Cohere | COHERE_API_KEY | cohere/command-a-plus-05-2026 |
-| GitHub Models | GITHUB_MODELS_TOKEN | github_models/openai/gpt-4.1 |
-| Wafer | WAFER_API_KEY | wafer/DeepSeek-V4-Pro |
-| Kimi | KIMI_API_KEY | kimi/kimi-k2.5 |
-| MiniMax | MINIMAX_API_KEY | minimax/MiniMax-M3 |
-| Groq | GROQ_API_KEY | groq/llama-3.3-70b-versatile |
-| Cerebras | CEREBRAS_API_KEY | cerebras/gpt-oss-120b |
-| SambaNova | SAMBANOVA_API_KEY | sambanova/Meta-Llama-3.3-70B-Instruct |
-| Fireworks | FIREWORKS_API_KEY | fireworks/accounts/fireworks/models/llama-v3p3-70b-instruct |
-| Cloudflare Workers AI | CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID | cloudflare/@cf/moonshotai/kimi-k2.6 |
-| Z.ai | ZAI_API_KEY | zai/glm-5.2 |
-| Ollama | OLLAMA_BASE_URL | ollama/qwen3-coder |
-| LM Studio | LM_STUDIO_BASE_URL | lmstudio/model-id |
-| llama.cpp | LLAMACPP_BASE_URL | llamacpp/model-id |
+| [OpenRouter](https://openrouter.ai/) | `OPENROUTER_API_KEY` | `open_router/openrouter/free` |
+| [NVIDIA NIM](https://build.nvidia.com/) | `NVIDIA_NIM_API_KEY` | `nvidia_nim/nvidia/nemotron-3-super-120b-a12b` |
+| [Gemini](https://aistudio.google.com/) | `GEMINI_API_KEY` | `gemini/models/gemini-3.1-flash-lite` |
+| [DeepSeek](https://platform.deepseek.com/) | `DEEPSEEK_API_KEY` | `deepseek/deepseek-chat` |
+| [Mistral](https://console.mistral.ai/) | `MISTRAL_API_KEY` | `mistral/devstral-small-latest` |
+| [Mistral Codestral](https://console.mistral.ai/) | `CODESTRAL_API_KEY` | `mistral_codestral/codestral-latest` |
+| [OpenCode Zen](https://opencode.ai/) | `OPENCODE_API_KEY` | `opencode/gpt-5.3-codex` |
+| [OpenCode Go](https://opencode.ai/) | `OPENCODE_API_KEY` | `opencode_go/minimax-m2.7` |
+| [Vercel AI Gateway](https://vercel.com/docs/ai-gateway) | `AI_GATEWAY_API_KEY` | `vercel/openai/gpt-5.5` |
+| [Hugging Face](https://huggingface.co/) | `HUGGINGFACE_API_KEY` | `huggingface/openai/gpt-oss-120b:fastest` |
+| [Cohere](https://cohere.com/) | `COHERE_API_KEY` | `cohere/command-a-plus-05-2026` |
+| [GitHub Models](https://github.com/marketplace/models) | `GITHUB_MODELS_TOKEN` | `github_models/openai/gpt-4.1` |
+| [Wafer](https://www.wafer.ai/) | `WAFER_API_KEY` | `wafer/DeepSeek-V4-Pro` |
+| [Kimi](https://platform.moonshot.cn/) | `KIMI_API_KEY` | `kimi/kimi-k2.5` |
+| [MiniMax](https://www.minimax.io/) | `MINIMAX_API_KEY` | `minimax/MiniMax-M3` |
+| [Groq](https://console.groq.com/) | `GROQ_API_KEY` | `groq/llama-3.3-70b-versatile` |
+| [Cerebras](https://cloud.cerebras.ai/) | `CEREBRAS_API_KEY` | `cerebras/gpt-oss-120b` |
+| [SambaNova](https://cloud.sambanova.ai/) | `SAMBANOVA_API_KEY` | `sambanova/Meta-Llama-3.3-70B-Instruct` |
+| [Fireworks](https://fireworks.ai/) | `FIREWORKS_API_KEY` | `fireworks/accounts/fireworks/models/llama-v3p3-70b-instruct` |
+| [Cloudflare Workers AI](https://developers.cloudflare.com/workers-ai/) | `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` | `cloudflare/@cf/moonshotai/kimi-k2.6` |
+| [Z.ai](https://z.ai/) | `ZAI_API_KEY` | `zai/glm-5.2` |
+| [Ollama](https://ollama.com/) | `OLLAMA_BASE_URL` | `ollama/qwen3-coder` |
+| [LM Studio](https://lmstudio.ai/) | `LM_STUDIO_BASE_URL` | `lmstudio/model-id` |
+| [llama.cpp](https://github.com/ggml-org/llama.cpp) | `LLAMACPP_BASE_URL` | `llamacpp/model-id` |
 
 The Admin UI contains the complete provider catalog and provider-specific validation.
 

@@ -8,6 +8,8 @@ from free_codex.api.admin_config.values import MASKED_SECRET
 from free_codex.api.admin_urls import local_admin_url
 from free_codex.api.app import create_app
 from free_codex.config.settings import Settings
+from free_codex.providers.model_listing import ProviderModelInfo
+from free_codex.providers.runtime import ProviderRuntime
 
 
 def _local_client(app):
@@ -74,6 +76,20 @@ def test_admin_page_no_longer_renders_global_status_header(monkeypatch, tmp_path
     assert "modelBadge" not in response.text
 
 
+def test_admin_page_renders_provider_first_setup_flow(monkeypatch, tmp_path):
+    _set_home(monkeypatch, tmp_path)
+    app = create_app(lifespan_enabled=False)
+
+    response = _local_client(app).get("/admin")
+
+    assert response.status_code == 200
+    assert 'id="providerSearch"' in response.text
+    assert 'id="credentialField"' in response.text
+    assert 'id="modelField"' in response.text
+    assert 'id="testProviderButton"' in response.text
+    assert "Apply changes" in response.text
+
+
 def test_admin_static_no_longer_fetches_global_status_header():
     script = Path("src/free_codex/api/admin_static/admin.js").read_text(
         encoding="utf-8"
@@ -94,7 +110,30 @@ def test_admin_static_hides_managed_source_label():
     assert 'managed_env: "",' in script
     assert "hasOwnProperty.call(labels, source)" in script
     assert 'parts.push("locked")' in script
-    assert "sourceEl.textContent = source" in script
+    assert "sourceElement.textContent = source" in script
+
+
+def test_admin_static_tests_provider_with_unsaved_values():
+    script = Path("src/free_codex/api/admin_static/admin.js").read_text(
+        encoding="utf-8"
+    )
+
+    assert "body: JSON.stringify({ values: changedValues() })" in script
+    assert "state.modelOptions.set(provider.provider_id, result.models)" in script
+    assert "Connection verified" in script
+
+
+def test_admin_static_tracks_provider_tests_independently():
+    script = Path("src/free_codex/api/admin_static/admin.js").read_text(
+        encoding="utf-8"
+    )
+
+    assert "testingProviders: new Set()" in script
+    assert "state.testingProviders.add(provider.provider_id)" in script
+    assert "state.testingProviders.has(provider.provider_id)" in script
+    assert "state.testingProviders.delete(provider.provider_id)" in script
+    assert "if (state.testingProviders.has(provider.provider_id)) return" in script
+    assert 'testing ? "Testing…" : "Test connection"' in script
 
 
 def test_admin_config_masks_secrets_and_exposes_manifest(monkeypatch, tmp_path):
@@ -132,6 +171,22 @@ def test_admin_config_masks_secrets_and_exposes_manifest(monkeypatch, tmp_path):
         field for field in body["fields"] if field["key"] == "TELEGRAM_PROXY_URL"
     )
     assert telegram_proxy_field["secret"] is True
+    nim_status = next(
+        provider
+        for provider in body["provider_status"]
+        if provider["provider_id"] == "nvidia_nim"
+    )
+    assert nim_status["credential_env"] == "NVIDIA_NIM_API_KEY"
+    assert nim_status["credential_url"]
+    assert nim_status["default_base_url"] == "https://integrate.api.nvidia.com/v1"
+    assert "tools" in nim_status["capabilities"]
+    ollama_status = next(
+        provider
+        for provider in body["provider_status"]
+        if provider["provider_id"] == "ollama"
+    )
+    assert ollama_status["base_url_env"] == "OLLAMA_BASE_URL"
+    assert ollama_status["default_base_url"] == "http://localhost:11434"
 
 
 def test_admin_config_preserves_managed_env_source_contract(monkeypatch, tmp_path):
@@ -149,6 +204,36 @@ def test_admin_config_preserves_managed_env_source_contract(monkeypatch, tmp_pat
     model_field = next(field for field in body["fields"] if field["key"] == "MODEL")
     assert model_field["source"] == "managed_env"
     assert model_field["locked"] is False
+
+
+def test_admin_provider_test_accepts_unsaved_credential(monkeypatch, tmp_path):
+    _set_home(monkeypatch, tmp_path)
+    _clear_process_config(monkeypatch)
+    app = create_app(lifespan_enabled=False)
+    captured_keys: list[str] = []
+
+    class FakeProvider:
+        async def list_model_infos(self):
+            return frozenset({ProviderModelInfo("example/model")})
+
+    def resolve_provider(runtime, provider_id):
+        assert provider_id == "nvidia_nim"
+        captured_keys.append(runtime.settings.nvidia_nim_api_key)
+        return FakeProvider()
+
+    with patch.object(ProviderRuntime, "resolve_provider", resolve_provider):
+        response = _local_client(app).post(
+            "/admin/api/providers/nvidia_nim/test",
+            json={"values": {"NVIDIA_NIM_API_KEY": "unsaved-key"}},
+        )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "provider_id": "nvidia_nim",
+        "ok": True,
+        "models": ["example/model"],
+    }
+    assert captured_keys == ["unsaved-key"]
 
 
 def test_admin_apply_masks_telegram_proxy_credentials(monkeypatch, tmp_path):

@@ -17,8 +17,14 @@ from free_codex.config.settings import get_settings as get_cached_settings
 from free_codex.providers.runtime import ProviderRuntime
 
 from .admin_config.manifest import FIELD_BY_KEY
-from .admin_config.persistence import validate_updates, write_managed_env
+from .admin_config.persistence import (
+    effective_values_for_validation,
+    target_values_with_updates,
+    validate_updates,
+    write_managed_env,
+)
 from .admin_config.status import provider_config_status
+from .admin_config.validation import settings_from_values
 from .admin_config.values import load_config_response
 from .admin_urls import local_admin_url
 
@@ -166,10 +172,29 @@ async def local_provider_status(request: Request):
 
 
 @router.post("/admin/api/providers/{provider_id}/test")
-async def test_provider(provider_id: str, request: Request):
+async def test_provider(
+    provider_id: str,
+    payload: AdminConfigPayload,
+    request: Request,
+):
     require_loopback_admin(request)
-    settings = get_cached_settings()
-    runtime = _provider_runtime_for_admin(request, settings)
+    candidate_values = _filtered_values(payload.values)
+    temporary_runtime = bool(candidate_values)
+    if temporary_runtime:
+        validation = validate_updates(candidate_values)
+        if not validation["valid"]:
+            return {
+                "provider_id": provider_id,
+                "ok": False,
+                "error_type": "ValidationError",
+                "errors": validation["errors"],
+            }
+        target_values = target_values_with_updates(candidate_values)
+        effective_values = effective_values_for_validation(target_values)
+        runtime = ProviderRuntime(settings_from_values(effective_values))
+    else:
+        settings = get_cached_settings()
+        runtime = _provider_runtime_for_admin(request, settings)
     try:
         provider = runtime.resolve_provider(provider_id)
         infos = await provider.list_model_infos()
@@ -179,7 +204,11 @@ async def test_provider(provider_id: str, request: Request):
             "ok": False,
             "error_type": type(exc).__name__,
         }
-    runtime.cache_model_infos(provider_id, infos)
+    finally:
+        if temporary_runtime:
+            await runtime.cleanup()
+    if not temporary_runtime:
+        runtime.cache_model_infos(provider_id, infos)
     return {
         "provider_id": provider_id,
         "ok": True,

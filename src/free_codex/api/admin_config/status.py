@@ -31,6 +31,13 @@ def provider_config_status(
                     "status": "missing_url" if not base_url.strip() else "unknown",
                     "label": "Missing URL" if not base_url.strip() else "Not checked",
                     "base_url": base_url or descriptor.default_base_url or "",
+                    "base_url_env": _env_key_for_settings_attr(
+                        descriptor.base_url_attr
+                    ),
+                    "default_base_url": descriptor.default_base_url or "",
+                    "proxy_env": _env_key_for_settings_attr(descriptor.proxy_attr),
+                    "capabilities": list(descriptor.capabilities),
+                    "transport_type": descriptor.transport_type,
                 }
             )
             continue
@@ -45,6 +52,11 @@ def provider_config_status(
                 "status": "configured" if configured else "missing_key",
                 "label": "Configured" if configured else "Missing key",
                 "credential_env": descriptor.credential_env,
+                "credential_url": descriptor.credential_url,
+                "default_base_url": descriptor.default_base_url or "",
+                "proxy_env": _env_key_for_settings_attr(descriptor.proxy_attr),
+                "capabilities": list(descriptor.capabilities),
+                "transport_type": descriptor.transport_type,
             }
         )
     return statuses
@@ -57,3 +69,12 @@ def _value_for_settings_attr(
         if field.settings_attr == settings_attr:
             return str(state.get(field.key, {}).get("value", field.default))
     return ""
+
+
+def _env_key_for_settings_attr(settings_attr: str | None) -> str | None:
+    if settings_attr is None:
+        return None
+    for field in FIELDS:
+        if field.settings_attr == settings_attr:
+            return field.key
+    return None
